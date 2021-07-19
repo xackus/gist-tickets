@@ -1,38 +1,40 @@
+.App-wrapper {
+    margin: 30px;
+}
+
 .App {
-  text-align: center;
+    max-width: 1200px;
+    margin: auto;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.List-item .List-item-delete {
+    opacity: 0;
+}
+.List-item:hover .List-item-delete {
+    opacity: 1;
+}
+.List-item-delete:focus {
+    opacity: 1;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.List-item-header {
+    display: flex;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.List-item-header > :first-child {
+    flex-grow: 1;
 }
 
-.App-link {
-  color: #61dafb;
+.List-item-number {
+    font-weight: lighter;
+    color: dimgray;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.Login {
+    max-width: 500px;
+    margin: auto;
+}
+
+.AddTicket-content-textarea {
+    height: 200px;
 }
