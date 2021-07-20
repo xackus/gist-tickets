@@ -7,14 +7,18 @@
     margin: auto;
 }
 
-.List-item .List-item-delete {
+.List-item-delete {
     opacity: 0;
 }
-.List-item:hover .List-item-delete {
+
+.List-item:hover .List-item-delete, .List-item-delete:focus {
     opacity: 1;
 }
-.List-item-delete:focus {
-    opacity: 1;
+
+@media (hover: none) {
+    .List-item-delete {
+        opacity: 1;
+    }
 }
 
 .List-item-header {
