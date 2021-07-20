@@ -1,8 +1,8 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { Octokit } from 'octokit';
 import { useEffect, useState } from 'react';
 import { Alert, Button, Modal } from 'react-bootstrap';
 import AddTicket from './AddTicket';
+import { User } from './App';
 import './App.css';
 import List from './List';
 
@@ -14,15 +14,17 @@ export interface Ticket {
 }
 
 interface AuthedAppProps {
-    token: string;
+    user: User;
 }
 
 const TICKET_FILENAME = 'ticket.json';
 
-const AuthedApp = ({ token }: AuthedAppProps) => {
+const AuthedApp = ({ user }: AuthedAppProps) => {
     const [view, setView] = useState<'list' | 'add'>('list');
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [successMsg, setSuccessMsg] = useState(false);
+
+    const { octokit } = user;
 
     useEffect(() => {
         const fetchTickets = async () => {
@@ -31,9 +33,7 @@ const AuthedApp = ({ token }: AuthedAppProps) => {
             // and the REST API needs gist_id rather than node_id.
             // Use the REST API to obtain gist_id.
             try {
-                const octokit = new Octokit({ auth: token });
-
-                const unfiltered_list = await octokit.rest.gists.list();
+                const unfiltered_list = await octokit.request('GET /gists');
 
                 const list = unfiltered_list.data.filter(gist => {
                     const filenames = Object.keys(gist.files);
@@ -81,7 +81,7 @@ const AuthedApp = ({ token }: AuthedAppProps) => {
             }
         };
         fetchTickets();
-    }, [token]);
+    }, [octokit]);
 
     return <div>
         {successMsg && <Alert variant="success">Dodano ticket.</Alert>}
@@ -89,8 +89,7 @@ const AuthedApp = ({ token }: AuthedAppProps) => {
             <Button onClick={() => setView('add')}>Utwórz</Button>
         </div>
         <List tickets={tickets} onDelete={id => {
-            const octokit = new Octokit({ auth: token });
-            octokit.rest.gists.delete({
+            octokit.request('DELETE /gists/{gist_id}', {
                 gist_id: id,
             }).then(response => {
                 setTickets(tickets.filter(ticket => ticket.id !== id));
@@ -106,8 +105,7 @@ const AuthedApp = ({ token }: AuthedAppProps) => {
             </Modal.Header>
             <Modal.Body>
                 <AddTicket onAdd={ticket => {
-                    const octokit = new Octokit({ auth: token });
-                    octokit.rest.gists.create({
+                    octokit.request('POST /gists', {
                         description: ticket.title,
                         files: {
                             [TICKET_FILENAME]: { content: JSON.stringify({ number: ticket.number, content: ticket.content }) },

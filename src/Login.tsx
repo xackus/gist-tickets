@@ -1,4 +1,4 @@
-import { Octokit } from 'octokit';
+import { Octokit } from '@octokit/core';
 import { useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 
@@ -21,7 +21,7 @@ const Login = ({ onLogin }: LoginProps) => {
             }
 
             const octokit = new Octokit({ auth: token });
-            octokit.rest.users.getAuthenticated().then(response => {
+            octokit.request('GET /user').then(response => {
                 setValidated(false);
                 if (username !== response.data.login) {
                     setError('Nieprawidłowe dane logowania.');

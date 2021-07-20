@@ -1,4 +1,5 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Octokit } from '@octokit/core';
 import { useEffect, useState } from 'react';
 import { Container, Nav, Navbar } from 'react-bootstrap';
 import './App.css';
@@ -12,16 +13,30 @@ export interface Ticket {
     id: string;
 }
 
+export interface User {
+    name: string;
+    octokit: Octokit;
+}
+
+export interface Credentials {
+    name: string;
+    token: string;
+}
+
 /**
  * null removes the record
  */
-const useStorage = (key: string, initialState: string | null, storage: Storage = localStorage) => {
-    const useStateResult = useState(() => storage.getItem(key) ?? initialState);
+const useStorage = <T,>(key: string, initialState: T | null, storage: Storage = localStorage) => {
+    const useStateResult = useState<T | null>(() => {
+        const item = storage.getItem(key);
+        if (item !== null) return JSON.parse(item);
+        return initialState;
+    });
     const [value] = useStateResult;
 
     useEffect(() => {
         if (value !== null) {
-            storage.setItem(key, value);
+            storage.setItem(key, JSON.stringify(value));
         } else {
             storage.removeItem(key);
         }
@@ -31,22 +46,28 @@ const useStorage = (key: string, initialState: string | null, storage: Storage =
 }
 
 const App = () => {
-    const [token, setToken] = useStorage('token', null);
+    const [credentials, setCredentials] = useStorage<Credentials>('credentials', null);
 
     return <div className="App-wrapper">
         <div className="App">
-            <Navbar variant="light" bg="light" className="mb-3">
+            <Navbar variant="light" bg="light" expand="sm" className="mb-3">
                 <Container>
-                    <Navbar.Brand className="me-auto">Tickety</Navbar.Brand>
-                    {token !== null && <Nav>
-                        <Nav.Link onClick={() => setToken(null)}>Wyloguj</Nav.Link>
-                    </Nav>}
+                    <Navbar.Brand>Tickety</Navbar.Brand>
+                    {credentials !== null && <>
+                        <Navbar.Toggle />
+                        <Navbar.Collapse className="justify-content-end">
+                            <Navbar.Text>Użytkownik: {credentials.name}</Navbar.Text>
+                            <Nav>
+                                <Nav.Link onClick={() => setCredentials(null)}>Wyloguj</Nav.Link>
+                            </Nav>
+                        </Navbar.Collapse>
+                    </>}
                 </Container>
             </Navbar>
-            {token !== null
-                ? <AuthedApp token={token} />
-                : <Login onLogin={(username, token) => {
-                    setToken(token);
+            {credentials !== null
+                ? <AuthedApp user={{ name: credentials.name, octokit: new Octokit({ auth: credentials.token }) }} />
+                : <Login onLogin={(name, token) => {
+                    setCredentials({ name, token });
                 }} />
             }
         </div>
