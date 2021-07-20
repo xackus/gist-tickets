@@ -1,7 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Octokit } from 'octokit';
 import { useEffect, useState } from 'react';
-import { Alert, Button } from 'react-bootstrap';
+import { Alert, Button, Modal } from 'react-bootstrap';
 import AddTicket from './AddTicket';
 import './App.css';
 import List from './List';
@@ -17,85 +17,110 @@ interface AuthedAppProps {
     token: string;
 }
 
+const TICKET_FILENAME = 'ticket.json';
+
 const AuthedApp = ({ token }: AuthedAppProps) => {
     const [view, setView] = useState<'list' | 'add'>('list');
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [successMsg, setSuccessMsg] = useState(false);
 
-    const fetchTickets = () => {
-        const octokit = new Octokit({ auth: token });
-        octokit.graphql(`
-            query {
-                viewer {
-                    login
-                    gists (first: 30, orderBy: {field: CREATED_AT, direction: DESC}, privacy: ALL ) {
-                        nodes {
-                            id
-                            description
-                            files (limit: 1) {
-                                name
-                                text
+    useEffect(() => {
+        const fetchTickets = async () => {
+            // Use graphql to fetch all files in one request.
+            // Unfortunately right now the graphql API does not support deleting gists
+            // and the REST API needs gist_id rather than node_id.
+            // Use the REST API to obtain gist_id.
+            try {
+                const octokit = new Octokit({ auth: token });
+
+                const unfiltered_list = await octokit.rest.gists.list();
+
+                const list = unfiltered_list.data.filter(gist => {
+                    const filenames = Object.keys(gist.files);
+                    return filenames.length === 1 && filenames[0] === TICKET_FILENAME;
+                });
+
+                const node_id_to_gist_id = new Map(list.map(gist => [gist.node_id, gist.id]));
+
+                const { nodes } = await octokit.graphql(`
+                    query gists($node_ids: [ID!]!){
+                        nodes(ids: $node_ids) {
+                            ... on Gist {
+                                id
+                                description
+                                files (limit: 1) {
+                                    name
+                                    text
+                                }
                             }
                         }
                     }
-                }
+                `, {
+                    node_ids: list.map(gist => gist.node_id)
+                });
+                setTickets(nodes.flatMap((gist: any) => {
+                    const file = gist?.files?.[0];
+                    if (typeof gist?.description !== 'string') return [];
+                    if (file?.name !== TICKET_FILENAME || typeof file?.text !== 'string') return [];
+                    let parsed;
+                    try {
+                        parsed = JSON.parse(file.text)
+                    } catch (err) {
+                        return [];
+                    }
+                    if (typeof parsed?.number !== 'number' || typeof parsed?.content !== 'string') return [];
+                    return [{
+                        title: gist.description,
+                        number: parsed.number,
+                        content: parsed.content,
+                        id: node_id_to_gist_id.get(gist.id),
+                    }];
+                }));
+            } catch (error) {
+                console.dir(error)
             }
-        `).then(response => setTickets((response as any).viewer.gists.nodes.flatMap((gist: any) => {
-            const file = gist.files?.[0];
-            if (file?.name !== 'ticket.json' || typeof file?.text !== 'string') return [];
-            let parsed;
-            try {
-                parsed = JSON.parse(file.text)
-            } catch (err) {
-                return [];
-            }
-            if (typeof parsed.number !== 'number' || typeof parsed.content !== 'string') return [];
-            return [{
-                title: gist.description,
-                number: parsed.number,
-                content: parsed.content,
-                id: gist.id,
-            }];
-        })), err => console.dir(err));
-    };
-
-    useEffect(fetchTickets, [token]);
+        };
+        fetchTickets();
+    }, [token]);
 
     return <div>
-        {view === 'list' &&
-            <>
-                {successMsg && <Alert variant="success">Dodano ticket.</Alert>}
-                <div className="mb-3">
-                    <Button onClick={() => setView('add')}>Utwórz</Button>
-                </div>
-                <List tickets={tickets} onDelete={id => {
+        {successMsg && <Alert variant="success">Dodano ticket.</Alert>}
+        <div className="mb-3">
+            <Button onClick={() => setView('add')}>Utwórz</Button>
+        </div>
+        <List tickets={tickets} onDelete={id => {
+            const octokit = new Octokit({ auth: token });
+            octokit.rest.gists.delete({
+                gist_id: id,
+            }).then(response => {
+                setTickets(tickets.filter(ticket => ticket.id !== id));
+                setSuccessMsg(false);
+            }, error => console.dir(error));
+        }} />
+        {/* Looks like there is a bug in Modal type definition
+            Probably Element instead of Element[] somewhere
+        // @ts-ignore */}
+        <Modal show={view === 'add'} onHide={() => setView('list')} size="lg">
+            <Modal.Header closeButton>
+                <Modal.Title>Utwórz ticket</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                <AddTicket onAdd={ticket => {
                     const octokit = new Octokit({ auth: token });
-                    octokit.rest.gists.delete({
-                        // TODO
-                        gist_id: atob(id).slice(7),
+                    octokit.rest.gists.create({
+                        description: ticket.title,
+                        files: {
+                            [TICKET_FILENAME]: { content: JSON.stringify({ number: ticket.number, content: ticket.content }) },
+                        },
+                        public: false,
                     }).then(response => {
-                        setTickets(tickets.filter(ticket => ticket.id !== id));
-                        // setSuccessMsg(true);
+                        setTickets([{ ...ticket, id: response.data.id! }, ...tickets])
+                        setView('list');
+                        setSuccessMsg(true);
                     }, error => console.dir(error));
                 }} />
-            </>
-        }
-        {view === 'add' &&
-            <AddTicket onAdd={ticket => {
-                const octokit = new Octokit({ auth: token });
-                octokit.rest.gists.create({
-                    description: ticket.title,
-                    files: {
-                        'ticket.json': { content: JSON.stringify({ number: ticket.number, content: ticket.content }) },
-                    },
-                    public: false,
-                }).then(response => {
-                    setTickets([{ ...ticket, id: response.data.id! }, ...tickets])
-                    setView('list');
-                    setSuccessMsg(true);
-                }, error => console.dir(error));
-            }} />
-        }
+            </Modal.Body>
+        </Modal>
     </div>;
 }
 

@@ -73,7 +73,9 @@ const AddTicket = ({ onAdd }: AddTicketProps) => {
                 </Accordion.Body>
             </Accordion.Item>
         </Accordion>
-        <Button type="submit">Utwórz</Button>
+        <div className="text-center">
+            <Button type="submit">Utwórz</Button>
+        </div>
     </Form>
 }
 

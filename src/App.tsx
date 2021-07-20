@@ -1,6 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useEffect, useState } from 'react';
-import { Nav, Navbar } from 'react-bootstrap';
+import { Container, Nav, Navbar } from 'react-bootstrap';
 import './App.css';
 import AuthedApp from './AuthedApp';
 import Login from './Login';
@@ -35,11 +35,13 @@ const App = () => {
 
     return <div className="App-wrapper">
         <div className="App">
-            <Navbar>
-                <Navbar.Brand className="me-auto">Tickety</Navbar.Brand>
-                {token !== null && <Nav>
-                    <Nav.Link onClick={() => setToken(null)}>Wyloguj</Nav.Link>
-                </Nav>}
+            <Navbar variant="light" bg="light" className="mb-3">
+                <Container>
+                    <Navbar.Brand className="me-auto">Tickety</Navbar.Brand>
+                    {token !== null && <Nav>
+                        <Nav.Link onClick={() => setToken(null)}>Wyloguj</Nav.Link>
+                    </Nav>}
+                </Container>
             </Navbar>
             {token !== null
                 ? <AuthedApp token={token} />

@@ -53,7 +53,7 @@ const Login = ({ onLogin }: LoginProps) => {
                 {error}
             </Alert>}
             <div className="text-center">
-                <Button variant="primary" type="submit">Login</Button>
+                <Button variant="primary" type="submit">Zaloguj</Button>
             </div>
         </Form>
     </div>;

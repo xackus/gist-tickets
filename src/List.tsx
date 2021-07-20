@@ -16,7 +16,9 @@ const List = ({ tickets, onDelete }: ListProps) => {
                     <GoTrashcan />
                 </Button>
             </div>
-            {ticket.content}
+            {ticket.content.split('\n').map(line => (
+                <>{line}<br /></>
+            ))}
         </ListGroup.Item>)}
     </ListGroup>;
 }
