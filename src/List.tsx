@@ -1,3 +1,4 @@
+import React from 'react';
 import { Button, ListGroup } from 'react-bootstrap';
 import { GoTrashcan } from "react-icons/go";
 import { Ticket } from './App';
@@ -16,8 +17,8 @@ const List = ({ tickets, onDelete }: ListProps) => {
                     <GoTrashcan />
                 </Button>
             </div>
-            {ticket.content.split('\n').map(line => (
-                <>{line}<br /></>
+            {ticket.content.split('\n').map((line, index) => (
+                <React.Fragment key={index}>{line}<br /></React.Fragment>
             ))}
         </ListGroup.Item>)}
     </ListGroup>;
