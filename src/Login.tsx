@@ -13,15 +13,15 @@ const Login = ({ onLogin }: LoginProps) => {
     const [error, setError] = useState<string | null>(null);
 
     return <div className="Login">
-        <Form noValidate validated={validated} onSubmit={event => {
+        <Form noValidate validated={validated} onSubmit={async event => {
             event.preventDefault();
             if (!event.currentTarget.checkValidity()) {
                 setValidated(true);
                 return;
             }
-
-            const octokit = new Octokit({ auth: token });
-            octokit.request('GET /user').then(response => {
+            try {
+                const octokit = new Octokit({ auth: token });
+                const response = await octokit.request('GET /user');
                 setValidated(false);
                 if (username !== response.data.login) {
                     setError('Nieprawidłowe dane logowania.');
@@ -30,7 +30,7 @@ const Login = ({ onLogin }: LoginProps) => {
                 } else {
                     onLogin(response.data.login, token);
                 }
-            }, error => {
+            } catch (error) {
                 setValidated(false);
                 if (error.status === 401) {
                     setError('Nieprawidłowe dane logowania.');
@@ -39,7 +39,7 @@ const Login = ({ onLogin }: LoginProps) => {
                 } else {
                     setError(`Wystąpił błąd. (${error.status} ${error.message})`);
                 }
-            });
+            }
         }}>
             <Form.Group className="mb-3" controlId="Login-username">
                 <Form.Label>Nazwa użytkownika</Form.Label>

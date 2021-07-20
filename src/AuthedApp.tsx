@@ -22,7 +22,7 @@ const TICKET_FILENAME = 'ticket.json';
 const AuthedApp = ({ user }: AuthedAppProps) => {
     const [view, setView] = useState<'list' | 'add'>('list');
     const [tickets, setTickets] = useState<Ticket[]>([]);
-    const [successMsg, setSuccessMsg] = useState(false);
+    const [msg, setMsg] = useState<'added' | 'deleted' | 'error' | null>(null);
 
     const { octokit } = user;
 
@@ -77,24 +77,29 @@ const AuthedApp = ({ user }: AuthedAppProps) => {
                     }];
                 }));
             } catch (error) {
-                console.dir(error)
+                setMsg('error');
             }
         };
         fetchTickets();
     }, [octokit]);
 
     return <div>
-        {successMsg && <Alert variant="success">Dodano ticket.</Alert>}
+        {msg === 'added' && <Alert variant="success">Dodano ticket.</Alert>}
+        {msg === 'deleted' && <Alert variant="info">Usunięto ticket.</Alert>}
+        {msg === 'error' && <Alert variant="danger">Wystąpił błąd.</Alert>}
         <div className="mb-3">
             <Button onClick={() => setView('add')}>Utwórz</Button>
         </div>
-        <List tickets={tickets} onDelete={id => {
-            octokit.request('DELETE /gists/{gist_id}', {
-                gist_id: id,
-            }).then(response => {
+        <List tickets={tickets} onDelete={async id => {
+            try {
+                await octokit.request('DELETE /gists/{gist_id}', {
+                    gist_id: id,
+                })
                 setTickets(tickets.filter(ticket => ticket.id !== id));
-                setSuccessMsg(false);
-            }, error => console.dir(error));
+                setMsg('deleted');
+            } catch (error) {
+                setMsg('error')
+            }
         }} />
         {/* Looks like there is a bug in Modal type definition
             Probably Element instead of Element[] somewhere
@@ -104,18 +109,21 @@ const AuthedApp = ({ user }: AuthedAppProps) => {
                 <Modal.Title>Utwórz ticket</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <AddTicket onAdd={ticket => {
-                    octokit.request('POST /gists', {
-                        description: ticket.title,
-                        files: {
-                            [TICKET_FILENAME]: { content: JSON.stringify({ number: ticket.number, content: ticket.content }) },
-                        },
-                        public: false,
-                    }).then(response => {
+                <AddTicket onAdd={async ticket => {
+                    try {
+                        const response = await octokit.request('POST /gists', {
+                            description: ticket.title,
+                            files: {
+                                [TICKET_FILENAME]: { content: JSON.stringify({ number: ticket.number, content: ticket.content }) },
+                            },
+                            public: false,
+                        });
                         setTickets([{ ...ticket, id: response.data.id! }, ...tickets])
                         setView('list');
-                        setSuccessMsg(true);
-                    }, error => console.dir(error));
+                        setMsg('added');
+                    } catch (error) {
+                        setMsg('error')
+                    }
                 }} />
             </Modal.Body>
         </Modal>
