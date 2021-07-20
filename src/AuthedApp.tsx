@@ -17,7 +17,7 @@ interface AuthedAppProps {
     user: User;
 }
 
-const TICKET_FILENAME = 'ticket.json';
+export const TICKET_FILENAME = 'ticket.json';
 
 const AuthedApp = ({ user }: AuthedAppProps) => {
     const [view, setView] = useState<'list' | 'add'>('list');
@@ -109,21 +109,10 @@ const AuthedApp = ({ user }: AuthedAppProps) => {
                 <Modal.Title>Utwórz ticket</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <AddTicket onAdd={async ticket => {
-                    try {
-                        const response = await octokit.request('POST /gists', {
-                            description: ticket.title,
-                            files: {
-                                [TICKET_FILENAME]: { content: JSON.stringify({ number: ticket.number, content: ticket.content }) },
-                            },
-                            public: false,
-                        });
-                        setTickets([{ ...ticket, id: response.data.id! }, ...tickets])
-                        setView('list');
-                        setMsg('added');
-                    } catch (error) {
-                        setMsg('error')
-                    }
+                <AddTicket user={user} onAdd={ticket => {
+                    setTickets([ticket, ...tickets])
+                    setView('list');
+                    setMsg('added');
                 }} />
             </Modal.Body>
         </Modal>

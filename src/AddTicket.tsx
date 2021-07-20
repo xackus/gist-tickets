@@ -1,19 +1,37 @@
 import { useState } from 'react';
-import { Accordion, Button, Form } from 'react-bootstrap';
-import { Ticket } from './App';
+import { Accordion, Alert, Button, Form } from 'react-bootstrap';
+import { Ticket, User } from './App';
+import { TICKET_FILENAME } from './AuthedApp';
 
 interface AddTicketProps {
-    onAdd: (ticket: Omit<Ticket, 'id'>) => void;
+    user: User;
+    onAdd: (ticket: Ticket) => void;
 }
 
-const AddTicket = ({ onAdd }: AddTicketProps) => {
+const AddTicket = ({ user, onAdd }: AddTicketProps) => {
     const [title, setTitle] = useState('');
     const [number, setNumber] = useState<number | null>(null);
     const [content, setContent] = useState('');
     const [validated, setValidated] = useState(false);
+    const [error, setError] = useState(false);
 
     type Step = 'title' | 'number' | 'content' | undefined;
     const [step, setStep] = useState<Step>('title');
+
+    const add = async (ticket: Omit<Ticket, 'id'>) => {
+        try {
+            const response = await user.octokit.request('POST /gists', {
+                description: ticket.title,
+                files: {
+                    [TICKET_FILENAME]: { content: JSON.stringify({ number: ticket.number, content: ticket.content }) },
+                },
+                public: false,
+            });
+            onAdd({ ...ticket, id: response.data.id! });
+        } catch (error) {
+            setError(true);
+        }
+    };
 
     return <Form noValidate validated={validated} onSubmit={event => {
         event.preventDefault();
@@ -27,7 +45,7 @@ const AddTicket = ({ onAdd }: AddTicketProps) => {
             setStep('content');
             setValidated(true);
         } else {
-            onAdd({ title, number, content });
+            add({ title, number, content });
         }
     }}>
         <Accordion className="mb-3" activeKey={step} onSelect={eventKey => setStep((eventKey ?? undefined) as Step)}>
@@ -73,6 +91,7 @@ const AddTicket = ({ onAdd }: AddTicketProps) => {
                 </Accordion.Body>
             </Accordion.Item>
         </Accordion>
+        {error && <Alert variant="danger">Wystąpił błąd.</Alert>}
         <div className="text-center">
             <Button type="submit">Utwórz</Button>
         </div>
