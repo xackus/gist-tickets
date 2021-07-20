@@ -1,0 +1,25 @@
+{
+  "files": {
+    "main.css": "/gist-tickets/static/css/main.cb835a4f.chunk.css",
+    "main.js": "/gist-tickets/static/js/main.42a6ee73.chunk.js",
+    "main.js.map": "/gist-tickets/static/js/main.42a6ee73.chunk.js.map",
+    "runtime-main.js": "/gist-tickets/static/js/runtime-main.8a44d879.js",
+    "runtime-main.js.map": "/gist-tickets/static/js/runtime-main.8a44d879.js.map",
+    "static/css/2.4be38407.chunk.css": "/gist-tickets/static/css/2.4be38407.chunk.css",
+    "static/js/2.ae8b8fed.chunk.js": "/gist-tickets/static/js/2.ae8b8fed.chunk.js",
+    "static/js/2.ae8b8fed.chunk.js.map": "/gist-tickets/static/js/2.ae8b8fed.chunk.js.map",
+    "static/js/3.bdca3b58.chunk.js": "/gist-tickets/static/js/3.bdca3b58.chunk.js",
+    "static/js/3.bdca3b58.chunk.js.map": "/gist-tickets/static/js/3.bdca3b58.chunk.js.map",
+    "index.html": "/gist-tickets/index.html",
+    "static/css/2.4be38407.chunk.css.map": "/gist-tickets/static/css/2.4be38407.chunk.css.map",
+    "static/css/main.cb835a4f.chunk.css.map": "/gist-tickets/static/css/main.cb835a4f.chunk.css.map",
+    "static/js/2.ae8b8fed.chunk.js.LICENSE.txt": "/gist-tickets/static/js/2.ae8b8fed.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.8a44d879.js",
+    "static/css/2.4be38407.chunk.css",
+    "static/js/2.ae8b8fed.chunk.js",
+    "static/css/main.cb835a4f.chunk.css",
+    "static/js/main.42a6ee73.chunk.js"
+  ]
+}
